@@ -1,0 +1,21 @@
+# Maven target folder
+target/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Application properties
+
+**/src/main/resources/application-dev.properties
+**/src/main/resources/application.properties
+
+# Maven wrapper jar (optional)
+.mvn/wrapper/maven-wrapper.jar
