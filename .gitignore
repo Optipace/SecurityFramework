@@ -1,2 +1,15 @@
 target/
 .mvn/wrapper/maven-wrapper.jar
+
+# Spring config files
+application.properties
+application-dev.properties
+**/application.properties
+**/application-dev.properties
+
+# IntelliJ
+.idea/
+*.iml
+
+# Logs
+*.log

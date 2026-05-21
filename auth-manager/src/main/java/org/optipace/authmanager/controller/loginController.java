@@ -5,7 +5,8 @@ import com.google.code.kaptcha.impl.DefaultKaptcha;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.optipace.authmanager.DTO.RequestDTO.LoginRequest;
-import org.optipace.authmanager.DTO.ResponseDTO.BaseResponse;
+import org.optipace.authmanager.DTO.RequestDTO.RefreshTokenRequest;
+import org.optipace.authmanager.DTO.ResponseDTO.TokenResponse;
 import org.optipace.authmanager.service.AuthService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,8 +24,7 @@ public class loginController {
     private final DefaultKaptcha defaultKaptcha;
     private final AuthService authService;
 
-
-    @GetMapping("/captcha")
+    @GetMapping("/v1/captcha")
     public void getCaptcha(HttpServletRequest request,
                            HttpServletResponse response) throws Exception {
 
@@ -41,9 +41,22 @@ public class loginController {
     }
 
 
-    @PostMapping("/login")
-    public ResponseEntity<BaseResponse> login(@RequestBody LoginRequest request,
-                                              HttpSession session,HttpServletRequest httprequest) {
+    @PostMapping("/v1/login")
+    public ResponseEntity<TokenResponse> login(@RequestBody LoginRequest request,
+                                               HttpSession session, HttpServletRequest httprequest) {
         return authService.login(request, session,httprequest);
     }
+
+
+    @PostMapping("/v1/refresh-token")
+    public ResponseEntity<TokenResponse> updateRefershToken(@RequestBody RefreshTokenRequest request) {
+        return authService.updateRefershToken(request);
+    }
+
+
+
+
+
+
+
 }

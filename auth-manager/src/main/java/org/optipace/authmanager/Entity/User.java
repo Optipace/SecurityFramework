@@ -25,43 +25,39 @@ public class User {
     @Column(unique = true, length = 20)
     private String phoneNumber;
 
-    @Column(length = 100)
+    @Column(name = "first_name")
+
     private String firstName;
 
-    @Column(length = 100)
+    @Column(name = "last_name")
+
     private String lastName;
 
     @Column(nullable = false)
     private String password;
 
-    @Column(length = 500)
-    private String profileImageUrl;
 
     @Column(nullable = false)
     private String status = "ACTIVE";
 
-    @Column(length = 100)
+    @Column(name = "created_by")
+
     private String createdBy;
 
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_datetime")
     private LocalDateTime createdDatetime;
 
-    @Column(length = 100)
+    @Column(name = "updated_by")
+
     private String updatedBy;
+    @Column(name = "updated_datetime")
 
     private LocalDateTime updatedDatetime;
 
-    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-    private Set<UserRole> userRoles = new HashSet<>();
 
-    @PrePersist
-    public void prePersist() {
-        createdDatetime = LocalDateTime.now();
-        updatedDatetime = LocalDateTime.now();
-    }
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "role_id", nullable = false)
+    private Role role;
 
-    @PreUpdate
-    public void preUpdate() {
-        updatedDatetime = LocalDateTime.now();
-    }
+
 }

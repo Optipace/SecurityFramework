@@ -41,20 +41,15 @@ public class SecurityConfig {
                 .map(user -> org.springframework.security.core.userdetails.User
                         .withUsername(user.getUsername())
                         .password(user.getPassword())
-
                         .authorities(
-                                user.getUserRoles()
-                                        .stream()
-                                        .map(userRole ->
-                                                "ROLE_" + userRole.getRole().getName()
-                                        )
-                                        .toArray(String[]::new)
+                                "ROLE_" + user.getRole().getName()
                         )
-
                         .build()
                 )
                 .orElseThrow(() ->
-                        new org.springframework.security.core.userdetails.UsernameNotFoundException("User not found")
+                        new org.springframework.security.core.userdetails.UsernameNotFoundException(
+                                "User not found: " + username
+                        )
                 );
     }
 }

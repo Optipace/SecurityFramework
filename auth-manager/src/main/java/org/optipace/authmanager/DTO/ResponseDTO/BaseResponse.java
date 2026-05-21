@@ -6,5 +6,5 @@ import lombok.Builder;
 @Builder
 public class BaseResponse {
 
-    public StatusDescription  statusDescription;
+    private StatusDescription  statusDescription;
 }
