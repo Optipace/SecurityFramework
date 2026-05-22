@@ -1,10 +1,14 @@
 package org.optipace.authmanager.DTO.ResponseDTO;
 
 
-import lombok.Builder;
+import lombok.*;
 
 @Builder
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class BaseResponse {
 
-    private StatusDescription  statusDescription;
+    public StatusDescription  statusDescription;
 }

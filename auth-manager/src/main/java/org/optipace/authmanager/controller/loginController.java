@@ -4,11 +4,16 @@ import com.google.code.kaptcha.impl.DefaultKaptcha;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.optipace.authmanager.DTO.RequestDTO.ChangePasswordRequest;
 import org.optipace.authmanager.DTO.RequestDTO.LoginRequest;
 import org.optipace.authmanager.DTO.RequestDTO.RefreshTokenRequest;
+import org.optipace.authmanager.DTO.ResponseDTO.BaseResponse;
 import org.optipace.authmanager.DTO.ResponseDTO.TokenResponse;
 import org.optipace.authmanager.service.AuthService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import javax.imageio.ImageIO;
@@ -27,16 +32,11 @@ public class loginController {
     @GetMapping("/v1/captcha")
     public void getCaptcha(HttpServletRequest request,
                            HttpServletResponse response) throws Exception {
-
         String captchaText = defaultKaptcha.createText();
-
         request.getSession().setAttribute("captcha", captchaText);
-
         BufferedImage image = defaultKaptcha.createImage(captchaText);
-
         response.setHeader("Cache-Control", "no-store, no-cache");
         response.setContentType("image/jpeg");
-
         ImageIO.write(image, "jpg", response.getOutputStream());
     }
 
@@ -53,6 +53,15 @@ public class loginController {
         return authService.updateRefershToken(request);
     }
 
+    @PostMapping("/v1/change-password")
+    public ResponseEntity<BaseResponse> changePassword(
+            @RequestBody ChangePasswordRequest request,
+            @RequestHeader("userId") String userId) {
+
+        return authService.changePassword(
+                request,
+                userId);
+    }
 
 
 

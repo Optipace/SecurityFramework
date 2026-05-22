@@ -57,8 +57,8 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
 
             ServerHttpRequest request = exchange.getRequest()
                     .mutate()
-                    .header("X-User-Id", claims.getSubject())
-                    .header("X-User-Roles",
+                    .header("userId", claims.getSubject())
+                    .header("userRole",
                             claims.get("role", String.class))
                     .build();
 

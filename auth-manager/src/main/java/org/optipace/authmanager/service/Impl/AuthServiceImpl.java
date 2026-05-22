@@ -3,6 +3,7 @@ package org.optipace.authmanager.service.Impl;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.optipace.authmanager.DTO.RequestDTO.ChangePasswordRequest;
 import org.optipace.authmanager.DTO.RequestDTO.LoginRequest;
 import org.optipace.authmanager.DTO.RequestDTO.RefreshTokenRequest;
 import org.optipace.authmanager.DTO.ResponseDTO.BaseResponse;
@@ -16,6 +17,9 @@ import org.optipace.authmanager.security.JwtUtil;
 import org.optipace.authmanager.service.AuthService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -184,5 +188,89 @@ public class AuthServiceImpl implements AuthService {
         );
     }
 
+    @Override
+    public ResponseEntity<BaseResponse> changePassword(
+            ChangePasswordRequest request, String userId) {
+
+
+
+        System.out.println(userId );
+
+        Optional<User> optionalUser =
+                userRepository.findById(
+                        Long.parseLong(userId)
+                );
+
+        if (optionalUser.isEmpty()) {
+
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    new BaseResponse(
+                            new StatusDescription(
+                                    "User Not Found",
+                                    404L
+                            )
+                    )
+            );
+        }
+
+        User user = optionalUser.get();
+
+        if (!passwordEncoder.matches(
+                request.getOldPassword(),
+                user.getPassword())) {
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    new BaseResponse(
+                            new StatusDescription(
+                                    "Old Password Incorrect",
+                                    400L
+                            )
+                    )
+            );
+        }
+
+        if (!request.getNewPassword()
+                .equals(request.getConfirmPassword())) {
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    new BaseResponse(
+                            new StatusDescription(
+                                    "New Password and Confirm Password do not match",
+                                    400L
+                            )
+                    )
+            );
+        }
+
+        if (passwordEncoder.matches(
+                request.getNewPassword(),
+                user.getPassword())) {
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    new BaseResponse(
+                            new StatusDescription(
+                                    "New password cannot be same as old password",
+                                    400L
+                            )
+                    )
+            );
+        }
+
+        user.setPassword(
+                passwordEncoder.encode(
+                        request.getNewPassword()));
+
+        userRepository.save(user);
+
+        return ResponseEntity.
+                ok(
+                new BaseResponse(
+                        new StatusDescription(
+                                "Password Changed Successfully",
+                                200L
+                        )
+                )
+        );
+    }
 
 }
