@@ -56,12 +56,17 @@ public class loginController {
     @PostMapping("/v1/change-password")
     public ResponseEntity<BaseResponse> changePassword(
             @RequestBody ChangePasswordRequest request,
-            @RequestHeader("userId") String userId) {
+            @RequestHeader("X-User-Id") String userId) {
 
         return authService.changePassword(
                 request,
                 userId);
     }
+
+
+
+
+
 
 
 
