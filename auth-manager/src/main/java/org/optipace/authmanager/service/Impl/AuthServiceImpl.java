@@ -11,15 +11,15 @@ import org.optipace.authmanager.DTO.ResponseDTO.StatusDescription;
 import org.optipace.authmanager.DTO.ResponseDTO.TokenResponse;
 import org.optipace.authmanager.Entity.RefreshToken;
 import org.optipace.authmanager.Entity.User;
+import org.optipace.authmanager.ExceptionHandler.BadRequestException;
+import org.optipace.authmanager.ExceptionHandler.ForbiddenException;
+import org.optipace.authmanager.ExceptionHandler.UnauthorisedException;
 import org.optipace.authmanager.repository.RefreshTokenRepository;
 import org.optipace.authmanager.repository.UserRepository;
 import org.optipace.authmanager.security.JwtUtil;
 import org.optipace.authmanager.service.AuthService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -50,17 +50,13 @@ public class AuthServiceImpl implements AuthService {
 
 
 
+
+
         if (sessionCaptcha == null ||
                 !sessionCaptcha.equalsIgnoreCase(request.getCaptcha())) {
 
-            return ResponseEntity.badRequest().body(
-                    new TokenResponse(
-                            new StatusDescription(
-                                    "Invalid Captcha",
-                                    400L
-                            ),
-                           null,null
-            ));
+
+            throw new BadRequestException("Invalid Captcha");
         }
 
         session.removeAttribute("CAPTCHA");
@@ -68,39 +64,20 @@ public class AuthServiceImpl implements AuthService {
         Optional<User> user = userRepository.findByUsername(request.getUsername());
 
         if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
-                    new TokenResponse(
-                            new StatusDescription(
-                                    "Invalid Username",
-                                    401L
-                            ),
-                            null,null
-                    ));
+            throw new BadRequestException("Invalid Username");
+
         }
 
         if (!passwordEncoder.matches(request.getPassword(), user.get().getPassword())) {
 
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
-                    new TokenResponse(
-                            new StatusDescription(
-                                    "Invalid  Password",
-                                    401L
-                            ),
-                            null,null
-                    ));
+            throw new BadRequestException("Invalid Password");
+
 
         }
 
         if (!"ACTIVE".equalsIgnoreCase(user.get().getStatus())) {
 
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
-                    new TokenResponse(
-                            new StatusDescription(
-                                    "User account is inactive",
-                                    403L
-                            ),
-                            null,null
-                    ));
+            throw new ForbiddenException("User not active");
 
         }
 
@@ -108,12 +85,13 @@ public class AuthServiceImpl implements AuthService {
                 user.get().getUsername(),user.get().getRole().getName());
 
 
+
         String newRefreshToken =
                 jwtUtil.generateRefreshToken(user.get().getId());
         return ResponseEntity.ok(
                 new TokenResponse(
                         new StatusDescription(
-                                "Login successfull",
+                                "Login successfully",
                                 200L
                         ),
                         token,newRefreshToken
@@ -127,13 +105,9 @@ public class AuthServiceImpl implements AuthService {
         if (request.getRefreshToken() == null ||
                 request.getRefreshToken().isBlank()) {
 
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new TokenResponse(
-                            new StatusDescription("Invalid Request", 400L),
-                            null,
-                            null
-                    )
-            );
+            throw new BadRequestException("Refresh token absent");
+
+
         }
 
         Optional<RefreshToken> token =
@@ -142,26 +116,16 @@ public class AuthServiceImpl implements AuthService {
 
         if (token.isEmpty()) {
 
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
-                    new TokenResponse(
-                            new StatusDescription("Invalid Refresh Token", 401L),
-                            null,
-                            null
-                    )
-            );
+            throw new UnauthorisedException("Refresh token not found");
+
         }
 
         if (token.get().getExpireDatetime().isBefore(LocalDateTime.now())) {
 
             refreshTokenRepository.delete(token.get());
 
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
-                    new TokenResponse(
-                            new StatusDescription("Token Expired", 401L),
-                            null,
-                            null
-                    )
-            );
+            throw new UnauthorisedException("Refresh token expired");
+
         }
 
         User user = token.get().getUser();
@@ -219,41 +183,23 @@ public class AuthServiceImpl implements AuthService {
                 request.getOldPassword(),
                 user.getPassword())) {
 
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new BaseResponse(
-                            new StatusDescription(
-                                    "Old Password Incorrect",
-                                    400L
-                            )
-                    )
-            );
+            throw new BadRequestException("Old Password Incorrect");
+
         }
 
         if (!request.getNewPassword()
                 .equals(request.getConfirmPassword())) {
 
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new BaseResponse(
-                            new StatusDescription(
-                                    "New Password and Confirm Password do not match",
-                                    400L
-                            )
-                    )
-            );
+            throw new BadRequestException("New Password and confirm password do not match");
+
         }
 
         if (passwordEncoder.matches(
                 request.getNewPassword(),
                 user.getPassword())) {
 
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new BaseResponse(
-                            new StatusDescription(
-                                    "New password cannot be same as old password",
-                                    400L
-                            )
-                    )
-            );
+            throw new BadRequestException("New Password cannot be same as old password");
+
         }
 
         user.setPassword(

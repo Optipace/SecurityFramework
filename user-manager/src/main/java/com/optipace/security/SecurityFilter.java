@@ -1,5 +1,7 @@
 package com.optipace.security;
 
+import com.optipace.entity.Permission;
+import com.optipace.entity.Role;
 import com.optipace.entity.User;
 import com.optipace.repository.UserRepository;
 import jakarta.servlet.FilterChain;
@@ -15,16 +17,23 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
+@Component
 @RequiredArgsConstructor
 public class SecurityFilter extends OncePerRequestFilter {
 
     private final UserRepository userRepository;
+
+
+
 
     @Override
     protected void doFilterInternal(
@@ -33,30 +42,40 @@ public class SecurityFilter extends OncePerRequestFilter {
             FilterChain filterChain)
             throws ServletException, IOException {
 
-        String userId = request.getHeader("userId");
-        String role = request.getHeader("userRole");
+        String userId = request.getHeader("X-User-Id");
 
         if (userId != null) {
 
-            Optional<User> user =
-                    userRepository.findById(
-                            Long.parseLong(userId)
+            User user = userRepository.findById(Long.parseLong(userId))
+                    .orElse(null);
+
+            if (user != null) {
+
+                Set<GrantedAuthority> authorities = new HashSet<>();
+
+                Role role = user.getRole();
+
+                if (role != null) {
+
+                    authorities.add(
+                            new SimpleGrantedAuthority("ROLE_" + role.getName())
                     );
 
-            if (user.isPresent()) {
+                    if (role.getPermissions() != null) {
+                        for (Permission permission : role.getPermissions()) {
+
+                            authorities.add(
+                                    new SimpleGrantedAuthority(permission.getName())
+                            );
+                        }
+                    }
+                }
 
                 AuthPrincipal principal =
                         new AuthPrincipal(
-                                user.get().getId(),
-                                user.get().getUsername(),
-                                role
-                        );
-
-                List<GrantedAuthority> authorities =
-                        List.of(
-                                new SimpleGrantedAuthority(
-                                        "ROLE_" + role
-                                )
+                                user.getId(),
+                                user.getUsername(),
+                                role != null ? role.getName() : null
                         );
 
                 Authentication authentication =
@@ -66,8 +85,7 @@ public class SecurityFilter extends OncePerRequestFilter {
                                 authorities
                         );
 
-                SecurityContextHolder
-                        .getContext()
+                SecurityContextHolder.getContext()
                         .setAuthentication(authentication);
             }
         }

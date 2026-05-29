@@ -22,8 +22,8 @@ public class UserController {
 
     private final UserService userService;
 
-    @PostMapping("/create")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/v1/create")
+    @PreAuthorize("hasAuthority('CREATE_USER')")
     public BaseResponse createUser(
             @RequestBody UserRequestDto requestDto,
             @AuthenticationPrincipal AuthPrincipal authPrincipal) {

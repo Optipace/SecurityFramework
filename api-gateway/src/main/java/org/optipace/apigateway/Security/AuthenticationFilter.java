@@ -62,6 +62,9 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
 
 			Claims claims = jwtUtil.getClaims(token);
 
+			System.out.println(claims.get("role") + "User Role");
+
+
 
 			ServerHttpRequest request = exchange.getRequest().mutate()
 					.headers(headers -> {

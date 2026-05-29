@@ -3,6 +3,8 @@ package com.optipace.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -11,6 +13,8 @@ import java.util.Set;
 @Entity
 @Data
 @Table(name = "users")
+@Getter
+@Setter
 public class User {
 
     @Id

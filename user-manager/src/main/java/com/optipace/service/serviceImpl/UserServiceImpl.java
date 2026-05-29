@@ -3,6 +3,8 @@ package com.optipace.service.serviceImpl;
 import com.optipace.DTO.RequestDTO.UserRequestDto;
 import com.optipace.DTO.ResponseDTO.BaseResponse;
 import com.optipace.DTO.ResponseDTO.StatusDescription;
+import com.optipace.ExceptionHandler.AlreadyExistException;
+import com.optipace.ExceptionHandler.NotFoundException;
 import com.optipace.entity.Role;
 import com.optipace.entity.User;
 import com.optipace.repository.RoleRepository;
@@ -10,6 +12,7 @@ import com.optipace.repository.UserRepository;
 import com.optipace.security.AuthPrincipal;
 import com.optipace.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +24,8 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl  implements UserService {
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
 
@@ -33,17 +38,20 @@ public class UserServiceImpl  implements UserService {
             UserRequestDto dto,
             AuthPrincipal authPrincipal) {
 
+
+
+
         if (userRepository.existsByUsername(dto.getUsername())) {
-            throw new RuntimeException("Username already exists");
+            throw  new AlreadyExistException("Username already exists");
         }
 
         if (userRepository.existsByEmail(dto.getEmail())) {
-            throw new RuntimeException("Email already exists");
+            throw  new AlreadyExistException("Email already exists");
         }
 
         Role role = roleRepository.findById(dto.getRoleId())
                 .orElseThrow(() ->
-                        new RuntimeException("Role not found"));
+                        new NotFoundException("Role not found"));
 
         User user = new User();
 
@@ -83,7 +91,7 @@ public class UserServiceImpl  implements UserService {
 
         User user = userRepository.findById(dto.getId())
                 .orElseThrow(() ->
-                        new RuntimeException("User not found"));
+                        new NotFoundException("User not found"));
 
         boolean isAdmin =
                 authPrincipal.getRole()
@@ -152,3 +160,7 @@ public class UserServiceImpl  implements UserService {
                 .build();
     }
 }
+
+
+
+
