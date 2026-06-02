@@ -4,6 +4,7 @@ import com.optipace.DTO.RequestDTO.UserRequestDto;
 import com.optipace.DTO.ResponseDTO.BaseResponse;
 import com.optipace.DTO.ResponseDTO.StatusDescription;
 import com.optipace.ExceptionHandler.AlreadyExistException;
+import com.optipace.ExceptionHandler.BadRequestException;
 import com.optipace.ExceptionHandler.NotFoundException;
 import com.optipace.entity.Role;
 import com.optipace.entity.User;
@@ -87,15 +88,15 @@ public class UserServiceImpl  implements UserService {
     @Override
     public BaseResponse updateUser(
             UserRequestDto dto,
-            AuthPrincipal authPrincipal) throws AccessDeniedException {
+            AuthPrincipal authPrincipal)
+            throws AccessDeniedException {
 
         User user = userRepository.findById(dto.getId())
                 .orElseThrow(() ->
                         new NotFoundException("User not found"));
 
         boolean isAdmin =
-                authPrincipal.getRole()
-                        .equals("ADMIN");
+                "ADMIN".equals(authPrincipal.getRole());
 
         boolean isSelf =
                 authPrincipal.getUserId()
@@ -106,42 +107,53 @@ public class UserServiceImpl  implements UserService {
                     "You can update only your own profile");
         }
 
-        if (dto.getFirstName() != null) {
+        if (dto.getFirstName() != null)
             user.setFirstName(dto.getFirstName());
-        }
 
-        if (dto.getLastName() != null) {
+        if (dto.getLastName() != null)
             user.setLastName(dto.getLastName());
-        }
 
         if (dto.getEmail() != null) {
+
+            Optional<User> existingUser =
+                    userRepository.findByEmail(dto.getEmail());
+
+            if (existingUser.isPresent() &&
+                    !existingUser.get().getId()
+                            .equals(user.getId())) {
+
+                throw new BadRequestException(
+
+                        "Email already exists");
+            }
+
             user.setEmail(dto.getEmail());
         }
 
-        if (dto.getPhoneNumber() != null) {
+        if (dto.getPhoneNumber() != null)
             user.setPhoneNumber(dto.getPhoneNumber());
-        }
 
-        if (dto.getPassword() != null) {
+        if (dto.getPassword() != null)
             user.setPassword(
                     passwordEncoder.encode(
                             dto.getPassword()));
-        }
 
         if (isAdmin) {
 
             if (dto.getRoleId() != null) {
 
-                Optional<Role> role =
+                Role role =
                         roleRepository.findById(
-                                        dto.getRoleId());
+                                        dto.getRoleId())
+                                .orElseThrow(() ->
+                                        new NotFoundException(
+                                                "Role not found"));
 
-                user.setRole(role.get());
+                user.setRole(role);
             }
 
-            if (dto.getStatus() != null) {
+            if (dto.getStatus() != null)
                 user.setStatus(dto.getStatus());
-            }
         }
 
         user.setUpdatedBy(
