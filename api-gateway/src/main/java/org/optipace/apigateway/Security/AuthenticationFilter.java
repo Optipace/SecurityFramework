@@ -1,5 +1,6 @@
 package org.optipace.apigateway.Security;
 
+import io.github.bucket4j.Bucket;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
@@ -31,6 +32,7 @@ import java.util.List;
 public class AuthenticationFilter implements GlobalFilter, Ordered {
 
 	private final JwtUtil jwtUtil;
+	private final RateLimiterService rateLimiterService;
 	private static final Logger log =LoggerFactory.getLogger(AuthenticationFilter.class);
 
 	@Value("${gateway.open-endpoints}")
@@ -61,6 +63,14 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
 		try {
 
 			Claims claims = jwtUtil.getClaims(token);
+
+			String userId = claims.getSubject();
+
+			Bucket bucket = rateLimiterService.resolveBucket(userId);
+
+			if (!bucket.tryConsume(1)) {
+				return tooManyRequests(exchange);
+			}
 
 			System.out.println(claims.get("role") + "User Role");
 
@@ -94,6 +104,11 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
 			log.error("Authentication failed", e);
 			return unauthorized(exchange, "Authentication failed");
 		}
+
+
+
+
+		
 	}
 
 	private Mono<Void> unauthorized(ServerWebExchange exchange, String message) {
@@ -117,6 +132,31 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
 
 	private boolean isPublicEndpoint(String path) {
 		return openEndpoints.stream().anyMatch(pattern -> matcher.match(pattern, path));
+	}
+
+
+	private Mono<Void> tooManyRequests(ServerWebExchange exchange) {
+
+		exchange.getResponse()
+				.setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
+
+		exchange.getResponse()
+				.getHeaders()
+				.add(HttpHeaders.CONTENT_TYPE, "application/json");
+
+		String body = """
+            {
+                "status":429,
+                "message":"Rate limit exceeded"
+            }
+            """;
+
+		DataBuffer buffer = exchange.getResponse()
+				.bufferFactory()
+				.wrap(body.getBytes(StandardCharsets.UTF_8));
+
+		return exchange.getResponse()
+				.writeWith(Mono.just(buffer));
 	}
 
 	@Override

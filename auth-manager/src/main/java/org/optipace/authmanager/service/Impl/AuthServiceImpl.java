@@ -59,11 +59,11 @@ public class AuthServiceImpl implements AuthService {
             throw new BadRequestException("Invalid Captcha");
         }
 
-        session.removeAttribute("CAPTCHA");
+        session.removeAttribute("captcha");
 
         Optional<User> user = userRepository.findByUsername(request.getUsername());
 
-        if (user == null) {
+        if (user.isEmpty()) {
             throw new BadRequestException("Invalid Username");
 
         }

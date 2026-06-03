@@ -1,7 +1,6 @@
 package com.optipace.DTO.ResponseDTO;
 
 
-
 import lombok.*;
 
 @Data

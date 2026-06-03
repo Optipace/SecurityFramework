@@ -22,7 +22,7 @@ public class SecurityConfig {
                 .sessionManagement(session ->                 session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/auth/v1/login","/auth/v1/captcha","/auth/v1/refresh-token").permitAll()
                         .anyRequest().authenticated()
                 );
         return http.build();

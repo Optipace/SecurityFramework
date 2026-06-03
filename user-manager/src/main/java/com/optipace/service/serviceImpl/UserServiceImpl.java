@@ -39,9 +39,6 @@ public class UserServiceImpl  implements UserService {
             UserRequestDto dto,
             AuthPrincipal authPrincipal) {
 
-
-
-
         if (userRepository.existsByUsername(dto.getUsername())) {
             throw  new AlreadyExistException("Username already exists");
         }
