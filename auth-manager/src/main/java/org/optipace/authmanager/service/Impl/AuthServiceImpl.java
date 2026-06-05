@@ -24,6 +24,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 
 @Service
@@ -34,6 +35,8 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtUtil jwtUtil;
+    private static final int MAX_ATTEMPTS = 5;
+    private static final int LOCK_TIME_MINUTES = 15;
 
     @Override
     public ResponseEntity<TokenResponse> login(
@@ -41,62 +44,69 @@ public class AuthServiceImpl implements AuthService {
             HttpSession session,
             HttpServletRequest servletRequest) {
 
-        System.out.println("Session ID login: " + session.getId());
-        System.out.println("Captcha in session: " + session.getAttribute("captcha"));
-        System.out.println(passwordEncoder.encode(request.getPassword()));
+        User user = userRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> new BadRequestException("Invalid Username"));
 
+        if (user.getAccountLockedUntil() != null &&
+                user.getAccountLockedUntil().isAfter(LocalDateTime.now())) {
+
+            DateTimeFormatter formatter =
+                    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+            String formattedTime =
+                    user.getAccountLockedUntil().format(formatter);
+
+            throw new ForbiddenException(
+                    "Account locked until " + formattedTime);
+
+
+        }
 
         String sessionCaptcha = (String) session.getAttribute("captcha");
-
-
-
-
 
         if (sessionCaptcha == null ||
                 !sessionCaptcha.equalsIgnoreCase(request.getCaptcha())) {
 
+            handleFailedLogin(user);
 
             throw new BadRequestException("Invalid Captcha");
         }
 
         session.removeAttribute("captcha");
 
-        Optional<User> user = userRepository.findByUsername(request.getUsername());
-
-        if (user.isEmpty()) {
-            throw new BadRequestException("Invalid Username");
-
-        }
-
-        if (!passwordEncoder.matches(request.getPassword(), user.get().getPassword())) {
-
-            throw new BadRequestException("Invalid Password");
-
-
-        }
-
-        if (!"ACTIVE".equalsIgnoreCase(user.get().getStatus())) {
-
+        if (!"ACTIVE".equalsIgnoreCase(user.getStatus())) {
             throw new ForbiddenException("User not active");
-
         }
 
-        String token = jwtUtil.generateToken(user.get().getId(),
-                user.get().getUsername(),user.get().getRole().getName());
 
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
 
+            handleFailedLogin(user);
 
-        String newRefreshToken =
-                jwtUtil.generateRefreshToken(user.get().getId());
+            throw new BadRequestException("In" +
+                    "valid Password");
+        }
+
+        user.setFailedAttempts(0);
+        user.setLastFailedAttempt(null);
+        user.setAccountLockedUntil(null);
+        userRepository.save(user);
+
+        String token = jwtUtil.generateToken(
+                user.getId(),
+                user.getUsername(),
+                user.getRole().getName()
+        );
+
+        String refreshToken = jwtUtil.generateRefreshToken(user.getId());
+
         return ResponseEntity.ok(
                 new TokenResponse(
-                        new StatusDescription(
-                                "Login successfully",
-                                200L
-                        ),
-                        token,newRefreshToken
-                ));
-
+                        new StatusDescription("Login successfully", 200L),
+                        token,
+                        refreshToken
+                )
+        );
     }
 
     @Override
@@ -208,6 +218,10 @@ public class AuthServiceImpl implements AuthService {
 
         userRepository.save(user);
 
+
+        refreshTokenRepository.deleteByUser_Id
+                (Long.parseLong(userId));
+
         return ResponseEntity.
                 ok(
                 new BaseResponse(
@@ -219,4 +233,21 @@ public class AuthServiceImpl implements AuthService {
         );
     }
 
+
+    private void handleFailedLogin(User user) {
+
+        user.setFailedAttempts(user.getFailedAttempts() + 1);
+        user.setLastFailedAttempt(LocalDateTime.now());
+
+        if (user.getFailedAttempts() >= MAX_ATTEMPTS) {
+
+            user.setAccountLockedUntil(
+                    LocalDateTime.now().plusMinutes(LOCK_TIME_MINUTES)
+            );
+
+            user.setFailedAttempts(0);
+        }
+
+        userRepository.save(user);
+    }
 }

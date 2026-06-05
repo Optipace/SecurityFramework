@@ -2,6 +2,8 @@ package org.optipace.authmanager.Entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -10,6 +12,8 @@ import java.util.Set;
 @Entity
 @Data
 @Table(name = "users")
+@Getter
+@Setter
 public class User {
 
     @Id
@@ -54,6 +58,15 @@ public class User {
 
     private LocalDateTime updatedDatetime;
 
+
+    @Column(name = "failed_attempts", nullable = false)
+    private int failedAttempts;
+
+    @Column(name = "last_failed_attempt")
+    private LocalDateTime lastFailedAttempt;
+
+    @Column(name = "account_locked_until")
+    private LocalDateTime accountLockedUntil;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "role_id", nullable = false)

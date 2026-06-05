@@ -40,9 +40,12 @@ private final RefreshTokenRepository refreshTokenRepository;
         Map<String, Object> claims = new HashMap<>();
         claims.put("username", username);
         claims.put("role", role);
+        String jwtId = UUID.randomUUID().toString();
+
 
         return Jwts.builder()
                 .setClaims(claims)
+                .setId(jwtId)
                 .setSubject(userId.toString())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
