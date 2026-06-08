@@ -4,6 +4,7 @@ import com.google.code.kaptcha.impl.DefaultKaptcha;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.optipace.authmanager.DTO.RequestDTO.ChangePasswordRequest;
 import org.optipace.authmanager.DTO.RequestDTO.LoginRequest;
 import org.optipace.authmanager.DTO.RequestDTO.RefreshTokenRequest;
@@ -24,6 +25,7 @@ import java.awt.image.BufferedImage;
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
+@Slf4j
 public class loginController {
 
     private final DefaultKaptcha defaultKaptcha;
@@ -32,11 +34,14 @@ public class loginController {
     @GetMapping("/v1/captcha")
     public void getCaptcha(HttpServletRequest request,
                            HttpServletResponse response) throws Exception {
+        log.info("Captcha request received");
         String captchaText = defaultKaptcha.createText();
         request.getSession().setAttribute("captcha", captchaText);
         BufferedImage image = defaultKaptcha.createImage(captchaText);
         response.setHeader("Cache-Control", "no-store, no-cache");
         response.setContentType("image/jpeg");
+        log.info("Captcha added ");
+
         ImageIO.write(image, "jpg", response.getOutputStream());
     }
 

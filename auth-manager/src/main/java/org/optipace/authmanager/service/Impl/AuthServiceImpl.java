@@ -3,6 +3,7 @@ package org.optipace.authmanager.service.Impl;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.optipace.authmanager.DTO.RequestDTO.ChangePasswordRequest;
 import org.optipace.authmanager.DTO.RequestDTO.LoginRequest;
 import org.optipace.authmanager.DTO.RequestDTO.RefreshTokenRequest;
@@ -18,6 +19,8 @@ import org.optipace.authmanager.repository.RefreshTokenRepository;
 import org.optipace.authmanager.repository.UserRepository;
 import org.optipace.authmanager.security.JwtUtil;
 import org.optipace.authmanager.service.AuthService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,6 +32,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
@@ -43,6 +47,8 @@ public class AuthServiceImpl implements AuthService {
             LoginRequest request,
             HttpSession session,
             HttpServletRequest servletRequest) {
+
+        log.info("Login attempt for username: {}", request.getUsername());
 
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new BadRequestException("Invalid Username"));
@@ -68,6 +74,7 @@ public class AuthServiceImpl implements AuthService {
                 !sessionCaptcha.equalsIgnoreCase(request.getCaptcha())) {
 
             handleFailedLogin(user);
+            log.warn("Invalid captcha provided for user: {}", request.getUsername());
 
             throw new BadRequestException("Invalid Captcha");
         }
@@ -75,6 +82,7 @@ public class AuthServiceImpl implements AuthService {
         session.removeAttribute("captcha");
 
         if (!"ACTIVE".equalsIgnoreCase(user.getStatus())) {
+            log.warn("Login attempt for inactive user: {}", request.getUsername());
             throw new ForbiddenException("User not active");
         }
 
@@ -82,9 +90,8 @@ public class AuthServiceImpl implements AuthService {
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
 
             handleFailedLogin(user);
-
-            throw new BadRequestException("In" +
-                    "valid Password");
+            log.warn("Invalid password for user: {}", request.getUsername());
+            throw new BadRequestException("Invalid Password");
         }
 
         user.setFailedAttempts(0);
@@ -97,6 +104,7 @@ public class AuthServiceImpl implements AuthService {
                 user.getUsername(),
                 user.getRole().getName()
         );
+        log.info("User logged in successfully: {}", request.getUsername());
 
         String refreshToken = jwtUtil.generateRefreshToken(user.getId());
 
@@ -111,7 +119,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public ResponseEntity<TokenResponse> updateRefershToken(RefreshTokenRequest request) {
-
+        log.info("Refresh token request received");
         if (request.getRefreshToken() == null ||
                 request.getRefreshToken().isBlank()) {
 
@@ -133,7 +141,7 @@ public class AuthServiceImpl implements AuthService {
         if (token.get().getExpireDatetime().isBefore(LocalDateTime.now())) {
 
             refreshTokenRepository.delete(token.get());
-
+            log.warn("Expired refresh token used");
             throw new UnauthorisedException("Refresh token expired");
 
         }
@@ -166,7 +174,7 @@ public class AuthServiceImpl implements AuthService {
     public ResponseEntity<BaseResponse> changePassword(
             ChangePasswordRequest request, String userId) {
 
-
+        log.info("Password change initiated for userId: {}", userId);
 
         System.out.println(userId );
 
@@ -192,6 +200,7 @@ public class AuthServiceImpl implements AuthService {
         if (!passwordEncoder.matches(
                 request.getOldPassword(),
                 user.getPassword())) {
+            log.warn("Old Password Incorrect: {}", userId);
 
             throw new BadRequestException("Old Password Incorrect");
 
@@ -199,7 +208,7 @@ public class AuthServiceImpl implements AuthService {
 
         if (!request.getNewPassword()
                 .equals(request.getConfirmPassword())) {
-
+            log.warn("New Password and confirm password do not match: {}", userId);
             throw new BadRequestException("New Password and confirm password do not match");
 
         }
@@ -207,6 +216,7 @@ public class AuthServiceImpl implements AuthService {
         if (passwordEncoder.matches(
                 request.getNewPassword(),
                 user.getPassword())) {
+            log.warn("New password can't be same as old: {}", userId);
 
             throw new BadRequestException("New Password cannot be same as old password");
 
@@ -217,6 +227,7 @@ public class AuthServiceImpl implements AuthService {
                         request.getNewPassword()));
 
         userRepository.save(user);
+        log.info("Password changed successfully for userId: {}", userId);
 
 
         refreshTokenRepository.deleteByUser_Id

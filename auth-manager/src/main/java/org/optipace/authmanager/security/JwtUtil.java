@@ -41,8 +41,6 @@ private final RefreshTokenRepository refreshTokenRepository;
         claims.put("username", username);
         claims.put("role", role);
         String jwtId = UUID.randomUUID().toString();
-
-
         return Jwts.builder()
                 .setClaims(claims)
                 .setId(jwtId)
@@ -56,7 +54,6 @@ private final RefreshTokenRepository refreshTokenRepository;
 
 
     public  String generateRefreshToken(Long userId){
-
         Optional<User> user = userRepository.findById(userId);
         RefreshToken token = new RefreshToken();
         token.setRefreshToken(UUID.randomUUID().toString());

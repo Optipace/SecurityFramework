@@ -13,6 +13,9 @@ import com.optipace.repository.UserRepository;
 import com.optipace.security.AuthPrincipal;
 import com.optipace.service.UserService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -24,6 +27,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserServiceImpl  implements UserService {
 
     @Autowired
@@ -34,7 +38,9 @@ public class UserServiceImpl  implements UserService {
     private final UserRepository userRepository;
     private  final RoleRepository roleRepository;
 
-     @Override
+    Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
+
+    @Override
     public BaseResponse createUser(
             UserRequestDto dto,
             AuthPrincipal authPrincipal) {

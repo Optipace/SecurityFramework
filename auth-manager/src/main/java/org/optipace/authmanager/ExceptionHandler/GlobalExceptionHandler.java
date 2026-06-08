@@ -2,15 +2,31 @@ package org.optipace.authmanager.ExceptionHandler;
 
 
 import jakarta.ws.rs.NotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
 
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleException(Exception ex) {
+
+        log.error("Unexpected application error", ex);
+
+        ErrorResponse err = new ErrorResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                "Internal Server Error"
+        );
+
+        return new ResponseEntity<>(err,
+                HttpStatus.INTERNAL_SERVER_ERROR);
+    }
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<ErrorResponse>  handleBadRequest(BadRequestException ex){
         ErrorResponse err = new ErrorResponse(
