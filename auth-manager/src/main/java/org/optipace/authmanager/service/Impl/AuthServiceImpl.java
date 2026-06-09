@@ -2,6 +2,7 @@ package org.optipace.authmanager.service.Impl;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.optipace.authmanager.DTO.RequestDTO.ChangePasswordRequest;
@@ -176,7 +177,6 @@ public class AuthServiceImpl implements AuthService {
 
         log.info("Password change initiated for userId: {}", userId);
 
-        System.out.println(userId );
 
         Optional<User> optionalUser =
                 userRepository.findById(
@@ -244,6 +244,21 @@ public class AuthServiceImpl implements AuthService {
         );
     }
 
+    @Override
+    @Transactional
+    public ResponseEntity<BaseResponse> logout(String userId) {
+
+        refreshTokenRepository.deleteByUser_Id(Long.valueOf(userId));
+
+        BaseResponse response = new BaseResponse(
+                new StatusDescription(
+                        "Logout Successfully",
+                        200L
+                )
+        );
+
+        return ResponseEntity.ok(response);
+    }
 
     private void handleFailedLogin(User user) {
 

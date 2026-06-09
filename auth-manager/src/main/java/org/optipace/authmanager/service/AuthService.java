@@ -17,4 +17,6 @@ public interface AuthService {
     ResponseEntity<TokenResponse> updateRefershToken(RefreshTokenRequest request);
 
     ResponseEntity<BaseResponse> changePassword(ChangePasswordRequest request, String username);
+
+    ResponseEntity<BaseResponse> logout(String userId);
 }

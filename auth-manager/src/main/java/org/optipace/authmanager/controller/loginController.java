@@ -41,18 +41,21 @@ public class loginController {
         response.setHeader("Cache-Control", "no-store, no-cache");
         response.setContentType("image/jpeg");
         log.info("Captcha added ");
-
         ImageIO.write(image, "jpg", response.getOutputStream());
     }
 
 
     @PostMapping("/v1/login")
     public ResponseEntity<TokenResponse> login(@RequestBody LoginRequest request,
-
-                                               HttpSession session, HttpServletRequest httprequest) {
+ HttpSession session, HttpServletRequest httprequest) {
         return authService.login(request, session,httprequest);
     }
 
+
+    @PostMapping("/v1/logout")
+    public ResponseEntity<BaseResponse> logout( @RequestHeader("X-User-Id") String userId) {
+        return   authService.logout(userId);
+    }
 
     @PostMapping("/v1/refresh-token")
     public ResponseEntity<TokenResponse> updateRefershToken(@RequestBody RefreshTokenRequest request) {
@@ -68,14 +71,6 @@ public class loginController {
                 request,
                 userId);
     }
-
-
-
-
-
-
-
-
 
 
 

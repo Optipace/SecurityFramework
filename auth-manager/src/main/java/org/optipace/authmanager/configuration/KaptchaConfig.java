@@ -1,4 +1,4 @@
-package org.optipace.authmanager.Configuration;
+package org.optipace.authmanager.configuration;
 
 
 import com.google.code.kaptcha.impl.DefaultKaptcha;

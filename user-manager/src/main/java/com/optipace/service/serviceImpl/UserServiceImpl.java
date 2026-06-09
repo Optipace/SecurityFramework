@@ -38,24 +38,29 @@ public class UserServiceImpl  implements UserService {
     private final UserRepository userRepository;
     private  final RoleRepository roleRepository;
 
-    Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
 
     @Override
     public BaseResponse createUser(
             UserRequestDto dto,
             AuthPrincipal authPrincipal) {
 
+        log.info("Create user request received for username: {}", dto.getUsername());
+
         if (userRepository.existsByUsername(dto.getUsername())) {
-            throw  new AlreadyExistException("Username already exists");
+            log.warn("User creation failed. Username already exists: {}", dto.getUsername());
+            throw new AlreadyExistException("Username already exists");
         }
 
         if (userRepository.existsByEmail(dto.getEmail())) {
-            throw  new AlreadyExistException("Email already exists");
+            log.warn("User creation failed. Email already exists: {}", dto.getEmail());
+            throw new AlreadyExistException("Email already exists");
         }
 
         Role role = roleRepository.findById(dto.getRoleId())
-                .orElseThrow(() ->
-                        new NotFoundException("Role not found"));
+                .orElseThrow(() -> {
+                    log.warn("Role not found. RoleId: {}", dto.getRoleId());
+                    return new NotFoundException("Role not found");
+                });
 
         User user = new User();
 
@@ -69,16 +74,17 @@ public class UserServiceImpl  implements UserService {
                 passwordEncoder.encode(dto.getPassword()));
 
         user.setRole(role);
-
         user.setStatus("ACTIVE");
-
-        user.setCreatedBy(
-                authPrincipal.getUsername());
-
-        user.setCreatedDatetime(
-                LocalDateTime.now());
+        user.setCreatedBy(authPrincipal.getUsername());
+        user.setCreatedDatetime(LocalDateTime.now());
 
         userRepository.save(user);
+
+        log.info(
+                "User created successfully. UserId: {}, Username: {}, CreatedBy: {}",
+                user.getId(),
+                user.getUsername(),
+                authPrincipal.getUsername());
 
         return BaseResponse.builder()
                 .statusDescription(
@@ -94,9 +100,16 @@ public class UserServiceImpl  implements UserService {
             AuthPrincipal authPrincipal)
             throws AccessDeniedException {
 
+        log.info(
+                "Update user request received. UserId: {}, RequestedBy: {}",
+                dto.getId(),
+                authPrincipal.getUsername());
+
         User user = userRepository.findById(dto.getId())
-                .orElseThrow(() ->
-                        new NotFoundException("User not found"));
+                .orElseThrow(() -> {
+                    log.warn("User not found. UserId: {}", dto.getId());
+                    return new NotFoundException("User not found");
+                });
 
         boolean isAdmin =
                 "ADMIN".equals(authPrincipal.getRole());
@@ -106,6 +119,11 @@ public class UserServiceImpl  implements UserService {
                         .equals(user.getId());
 
         if (!isAdmin && !isSelf) {
+            log.warn(
+                    "Unauthorized update attempt. TargetUserId: {}, RequestedBy: {}",
+                    user.getId(),
+                    authPrincipal.getUsername());
+
             throw new AccessDeniedException(
                     "You can update only your own profile");
         }
@@ -121,12 +139,14 @@ public class UserServiceImpl  implements UserService {
             Optional<User> existingUser =
                     userRepository.findByEmail(dto.getEmail());
 
-            if (existingUser.isPresent() &&
-                    !existingUser.get().getId()
-                            .equals(user.getId())) {
+            if (existingUser.isPresent()
+                    && !existingUser.get().getId().equals(user.getId())) {
+
+                log.warn(
+                        "Email update failed. Email already exists: {}",
+                        dto.getEmail());
 
                 throw new BadRequestException(
-
                         "Email already exists");
             }
 
@@ -136,21 +156,27 @@ public class UserServiceImpl  implements UserService {
         if (dto.getPhoneNumber() != null)
             user.setPhoneNumber(dto.getPhoneNumber());
 
-        if (dto.getPassword() != null)
+        if (dto.getPassword() != null) {
+            log.info("Password update requested for UserId: {}", user.getId());
+
             user.setPassword(
                     passwordEncoder.encode(
                             dto.getPassword()));
+        }
 
         if (isAdmin) {
 
             if (dto.getRoleId() != null) {
 
-                Role role =
-                        roleRepository.findById(
-                                        dto.getRoleId())
-                                .orElseThrow(() ->
-                                        new NotFoundException(
-                                                "Role not found"));
+                Role role = roleRepository.findById(dto.getRoleId())
+                        .orElseThrow(() -> {
+                            log.warn(
+                                    "Role not found while updating user. RoleId: {}",
+                                    dto.getRoleId());
+
+                            return new NotFoundException(
+                                    "Role not found");
+                        });
 
                 user.setRole(role);
             }
@@ -159,13 +185,15 @@ public class UserServiceImpl  implements UserService {
                 user.setStatus(dto.getStatus());
         }
 
-        user.setUpdatedBy(
-                authPrincipal.getUsername());
-
-        user.setUpdatedDatetime(
-                LocalDateTime.now());
+        user.setUpdatedBy(authPrincipal.getUsername());
+        user.setUpdatedDatetime(LocalDateTime.now());
 
         userRepository.save(user);
+
+        log.info(
+                "User updated successfully. UserId: {}, UpdatedBy: {}",
+                user.getId(),
+                authPrincipal.getUsername());
 
         return BaseResponse.builder()
                 .statusDescription(

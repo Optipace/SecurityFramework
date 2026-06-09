@@ -39,6 +39,7 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
 	private List<String> openEndpoints;
 
 	@Override
+
 	public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
 
 		String path = exchange.getRequest().getURI().getPath();
