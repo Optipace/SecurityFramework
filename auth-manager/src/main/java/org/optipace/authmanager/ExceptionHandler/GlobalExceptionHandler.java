@@ -29,6 +29,8 @@ public class GlobalExceptionHandler {
     }
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<ErrorResponse>  handleBadRequest(BadRequestException ex){
+
+        log.error("Bad Request exception", ex);
         ErrorResponse err = new ErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
                 ex.getMessage()
@@ -38,6 +40,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(UnauthorisedException.class)
     public ResponseEntity<ErrorResponse>  handleUnauthorisation(UnauthorisedException ex){
+        log.error("Unauthorised exception", ex);
         ErrorResponse err = new ErrorResponse(
                 HttpStatus.UNAUTHORIZED.value(),
                 ex.getMessage()
@@ -48,6 +51,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ForbiddenException.class)
     public ResponseEntity<ErrorResponse>  handleForbidden(ForbiddenException ex){
+        log.error("forbidden exception", ex);
         ErrorResponse err = new ErrorResponse(
                 HttpStatus.FORBIDDEN.value(),
                 ex.getMessage()
@@ -57,6 +61,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<ErrorResponse>  handleNotFound(NotFoundException ex){
+        log.error("Not found exception", ex);
         ErrorResponse err = new ErrorResponse(
                 HttpStatus.NOT_FOUND.value(),
                 ex.getMessage()

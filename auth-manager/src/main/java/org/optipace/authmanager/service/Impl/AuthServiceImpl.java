@@ -2,7 +2,6 @@ package org.optipace.authmanager.service.Impl;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.optipace.authmanager.DTO.RequestDTO.ChangePasswordRequest;
@@ -26,6 +25,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -52,7 +52,7 @@ public class AuthServiceImpl implements AuthService {
         log.info("Login attempt for username: {}", request.getUsername());
 
         User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new BadRequestException("Invalid Username"));
+                .orElseThrow(() -> new BadRequestException("Invalid Username or Password"));
 
         if (user.getAccountLockedUntil() != null &&
                 user.getAccountLockedUntil().isAfter(LocalDateTime.now())) {
@@ -92,7 +92,7 @@ public class AuthServiceImpl implements AuthService {
 
             handleFailedLogin(user);
             log.warn("Invalid password for user: {}", request.getUsername());
-            throw new BadRequestException("Invalid Password");
+            throw new BadRequestException("Invalid Username or Password");
         }
 
         user.setFailedAttempts(0);
@@ -119,6 +119,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional
     public ResponseEntity<TokenResponse> updateRefershToken(RefreshTokenRequest request) {
         log.info("Refresh token request received");
         if (request.getRefreshToken() == null ||

@@ -56,6 +56,11 @@ public class UserServiceImpl  implements UserService {
             throw new AlreadyExistException("Email already exists");
         }
 
+        if (userRepository.existsByPhoneNumber(dto.getPhoneNumber())) {
+            log.warn("User creation failed. Phone number already exists: {}", dto.getPhoneNumber());
+            throw new AlreadyExistException("Phone number already exists");
+        }
+
         Role role = roleRepository.findById(dto.getRoleId())
                 .orElseThrow(() -> {
                     log.warn("Role not found. RoleId: {}", dto.getRoleId());
@@ -138,6 +143,7 @@ public class UserServiceImpl  implements UserService {
 
             Optional<User> existingUser =
                     userRepository.findByEmail(dto.getEmail());
+            
 
             if (existingUser.isPresent()
                     && !existingUser.get().getId().equals(user.getId())) {

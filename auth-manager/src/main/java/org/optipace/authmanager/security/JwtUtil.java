@@ -54,11 +54,13 @@ private final RefreshTokenRepository refreshTokenRepository;
 
 
     public  String generateRefreshToken(Long userId){
-        Optional<User> user = userRepository.findById(userId);
+       User user = userRepository.findById(userId).orElseThrow(()->new RuntimeException("User not found"));
+
+
         RefreshToken token = new RefreshToken();
         token.setRefreshToken(UUID.randomUUID().toString());
         token.setCreatedDatetime(LocalDateTime.now());
-        token.setUser(user.get());
+        token.setUser(user);
         token.setExpireDatetime(LocalDateTime.now().plusSeconds(refreshExpiration));
         refreshTokenRepository.save(token);
         return token.getRefreshToken();

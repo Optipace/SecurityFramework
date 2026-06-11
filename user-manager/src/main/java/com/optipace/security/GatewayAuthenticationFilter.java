@@ -22,17 +22,14 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
-public class SecurityFilter extends OncePerRequestFilter {
+public class GatewayAuthenticationFilter extends OncePerRequestFilter {
 
     private final UserRepository userRepository;
-
-
+    private final AuthorityCacheService authorityCacheService;
 
 
     @Override
@@ -88,6 +85,7 @@ public class SecurityFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext()
                         .setAuthentication(authentication);
             }
+
         }
 
         filterChain.doFilter(request, response);
