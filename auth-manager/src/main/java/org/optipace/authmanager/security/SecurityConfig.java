@@ -25,7 +25,8 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-                .sessionManagement(session ->                 session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 ).addFilterBefore(
                         securityFilter,
                         UsernamePasswordAuthenticationFilter.class
@@ -42,24 +43,5 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    @Bean
-    public org.springframework.security.core.userdetails.UserDetailsService userDetailsService(
-            UserRepository userRepository) {
-
-        return username -> userRepository.findByUsername(username)
-                .map(user -> org.springframework.security.core.userdetails.User
-                        .withUsername(user.getUsername())
-                        .password(user.getPassword())
-                        .authorities(
-                                "ROLE_" + user.getRole().getName()
-                        )
-                        .build()
-                )
-                .orElseThrow(() ->
-                        new org.springframework.security.core.userdetails.UsernameNotFoundException(
-                                "User not found: " + username
-                        )
-                );
-    }
 
 }

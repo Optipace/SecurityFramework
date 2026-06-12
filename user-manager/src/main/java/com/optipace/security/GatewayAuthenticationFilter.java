@@ -1,7 +1,5 @@
 package com.optipace.security;
 
-import com.optipace.entity.Permission;
-import com.optipace.entity.Role;
 import com.optipace.entity.User;
 import com.optipace.repository.UserRepository;
 import jakarta.servlet.FilterChain;
@@ -13,7 +11,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,7 +18,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Set;
 
 @Component
@@ -48,31 +44,16 @@ public class GatewayAuthenticationFilter extends OncePerRequestFilter {
 
             if (user != null) {
 
-                Set<GrantedAuthority> authorities = new HashSet<>();
-
-                Role role = user.getRole();
-
-                if (role != null) {
-
-                    authorities.add(
-                            new SimpleGrantedAuthority("ROLE_" + role.getName())
-                    );
-
-                    if (role.getPermissions() != null) {
-                        for (Permission permission : role.getPermissions()) {
-
-                            authorities.add(
-                                    new SimpleGrantedAuthority(permission.getName())
-                            );
-                        }
-                    }
-                }
+                Set<GrantedAuthority> authorities =
+                        authorityCacheService.getAuthorities(user.getId());
 
                 AuthPrincipal principal =
                         new AuthPrincipal(
                                 user.getId(),
                                 user.getUsername(),
-                                role != null ? role.getName() : null
+                                user.getRole() != null
+                                        ? user.getRole().getName()
+                                        : null
                         );
 
                 Authentication authentication =
@@ -85,7 +66,6 @@ public class GatewayAuthenticationFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext()
                         .setAuthentication(authentication);
             }
-
         }
 
         filterChain.doFilter(request, response);

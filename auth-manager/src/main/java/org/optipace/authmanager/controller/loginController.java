@@ -51,7 +51,6 @@ public class loginController {
         return authService.login(request, session,httprequest);
     }
 
-
     @PostMapping("/v1/logout")
     public ResponseEntity<BaseResponse> logout( @RequestHeader("X-User-Id") String userId) {
         return   authService.logout(userId);

@@ -13,9 +13,7 @@ public class KaptchaConfig {
 
     @Bean
     public DefaultKaptcha defaultKaptcha() {
-
         Properties properties = new Properties();
-
         properties.setProperty("kaptcha.border", "no");
         properties.setProperty("kaptcha.textproducer.font.color", "black");
         properties.setProperty("kaptcha.textproducer.char.length", "6");
@@ -25,12 +23,9 @@ public class KaptchaConfig {
         properties.setProperty("kaptcha.noise.color", "gray");
         properties.setProperty("kaptcha.background.clear.from", "white");
         properties.setProperty("kaptcha.background.clear.to", "white");
-
         Config config = new Config(properties);
-
         DefaultKaptcha captcha = new DefaultKaptcha();
         captcha.setConfig(config);
-
         return captcha;
     }
 }
